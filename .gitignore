@@ -1,0 +1,33 @@
+# === Sensitive data (keys, tokens, configs) ===
+keys/*.json
+!keys/*.example.json
+sys/authorized_key.json
+!sys/*.example.json
+config/default.yaml
+!config/*.example.yaml
+contacts/**/*.json
+contacts/*.json
+!contacts/*.example.json
+
+# === Binaries ===
+*.exe
+nit
+
+# === Go ===
+/bin/
+/dist/
+
+# === IDE ===
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+
+# === OS ===
+.DS_Store
+Thumbs.db
+
+# === Environment ===
+.env
+.env.*

@@ -1,0 +1,8 @@
+{
+  "name": "your_name",
+  "type": "identity",
+  "version": 1,
+  "salt": "<base64-encoded-salt>",
+  "nonce": "<base64-encoded-nonce>",
+  "ciphertext": "<base64-encrypted-private-key-material>"
+}

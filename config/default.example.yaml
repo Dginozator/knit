@@ -1,0 +1,34 @@
+# Default configuration for E2EE Messenger
+# Copy this file to default.yaml and fill in your values
+
+# Yandex Data Streams configuration
+yds:
+  # Kinesis API endpoint from YDS console → stream → Overview → "Kinesis API endpoint"
+  endpoint: "yds.serverless.yandexcloud.net/<region>/<folder-id>/<stream-id>"
+  folder_id: "<your-folder-id>"               # Yandex Cloud folder ID
+  stream_name: "messenger"                      # Stream name
+  region: "ru-central1"
+
+  sa_key_file: "sys/authorized_key.json"
+
+  max_retries: 3
+  retry_delay_ms: 100
+
+# Key storage configuration
+storage:
+  path: "keys"
+  encryption: "argon2id"
+
+# Identity configuration
+identity:
+  name: "default"
+
+# Polling configuration
+polling:
+  interval: "1s"
+  batch_size: 10
+
+# Logging
+log:
+  level: "info"
+  format: "text"
