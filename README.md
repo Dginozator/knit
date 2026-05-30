@@ -67,24 +67,117 @@ go mod download
 go build -o nit ./cmd/messenger
 ```
 
-## Configuration
+## Quick Start — Setting Up from Scratch
 
-Create `config/default.yaml` or use environment variables:
+This project uses **example files** as templates. All sensitive data (keys, tokens, config with real IDs) is excluded from git via `.gitignore`. You need to create your own copies.
+
+### Step 1: Create a Yandex Cloud Account
+
+1. Go to [https://cloud.yandex.com](https://cloud.yandex.com) and sign in with your Yandex ID
+2. Add a billing account (a free trial is available)
+3. Open the [Yandex Cloud Console](https://console.cloud.yandex.com)
+4. Copy your **Folder ID** — visible in the URL or in folder settings (e.g. `b1g8s9q2kj7h5m3n1p4r`)
+
+### Step 2: Create a Service Account
+
+1. In the left menu, go to **IAM** → **Service Accounts** → **Create service account**
+2. Name it `messenger-sa`
+3. Add the following roles:
+   - `yds.writer` — for sending messages
+   - `yds.reader` — for receiving messages
+4. Click **Create**
+
+### Step 3: Create an Authorized Key (JSON)
+
+This key file is used to authenticate with Yandex Data Streams via the Kinesis API.
+
+1. Open the service account `messenger-sa` you just created
+2. Go to the **Keys** tab → **Create authorized key**
+3. Select key algorithm: **RSA_2048**
+4. Click **Create**
+5. ⚠️ **Download the JSON file immediately** — the private key is shown only once!
+6. Save it as `sys/authorized_key.json` in the project root
+
+The file should look like this:
+
+```json
+{
+  "id": "aje...",
+  "service_account_id": "aje...",
+  "created_at": "2026-01-01T00:00:00Z",
+  "key_algorithm": "RSA_2048",
+  "public_key": "-----BEGIN PUBLIC KEY-----\n...\n-----END PUBLIC KEY-----\n",
+  "private_key": "PLEASE DO NOT REMOVE THIS LINE! Yandex.Cloud SA Key ID <...>\n-----BEGIN PRIVATE KEY-----\n...\n-----END PRIVATE KEY-----\n"
+}
+```
+
+> 📄 See `sys/authorized_key.example.json` for the full template structure.
+
+### Step 4: Create a Yandex Data Stream
+
+1. In the left menu, go to **Yandex Data Streams** → **Create stream**
+2. Fill in:
+   - **Name**: `messenger`
+   - **Shard count**: `1`
+   - **Retention period**: `24 hours`
+3. Click **Create**
+4. After creation, open the stream → **Overview** tab and copy the **Kinesis API endpoint** — it looks like:
+   ```
+   yds.serverless.yandexcloud.net/ru-central1/b1g.../etn...
+   ```
+
+### Step 5: Create Config from Example
+
+```bash
+# Copy the example config and edit with your values
+cp config/default.example.yaml config/default.yaml
+```
+
+Edit `config/default.yaml` and fill in:
 
 ```yaml
 yds:
-  endpoint: "endpoint.yaml.rus.cloud-apps.store"
-  stream: "messenger-stream"
+  endpoint: "yds.serverless.yandexcloud.net/ru-central1/<your-folder-id>/<your-stream-id>"
+  folder_id: "<your-folder-id>"
+  stream_name: "messenger"
   region: "ru-central1"
-
-storage:
-  path: "~/.nit/keys"
-
-identity:
-  name: "default"
+  sa_key_file: "sys/authorized_key.json"
 ```
 
-### Environment Variables
+### Step 6: Create API Key (Alternative to Authorized Key)
+
+If you prefer API key authentication over the authorized key JSON:
+
+1. Open service account `messenger-sa` → **API keys** tab → **Create API key**
+2. ⚠️ **Copy the secret key immediately** — it's shown only once (e.g. `AQVN3...`)
+3. Store it securely in your OS keychain:
+
+```bash
+./nit secret set-api-key AQVN3xxxxxxxx
+./nit secret get-api-key  # verify
+```
+
+### Step 7: Generate Your Identity and Start Messaging
+
+```bash
+# Generate your encryption keys
+./nit keygen alice
+
+# Initialize the stream (one person, one time)
+./nit init
+
+# Send a message
+./nit send bob "Hello, Bob!"
+
+# Receive messages
+./nit receive
+```
+
+---
+
+## Configuration Reference
+
+Config is loaded from `config/default.yaml` (use `config/default.example.yaml` as a template). Alternatively, use environment variables:
 
 | Variable | Description |
 |----------|-------------|
