@@ -1,197 +1,196 @@
-# Настройка Yandex Cloud и запуск мессенджера
+# Setting Up Yandex Cloud and Running the Messenger
 
-## Архитектура для нескольких пользователей
+## Multi-User Architecture
 
 ```
 Yandex Cloud
-└── Один сервисный аккаунт (messenger-sa)
-    └── Один API-ключ (AQVN3...)  ← общий для всех, только для транспорта
-        └── Один поток YDS (folder_id/messenger)
-            ├── Алиса  (свои E2EE ключи, зашифрованы её паролем)
-            ├── Боб    (свои E2EE ключи, зашифрованы его паролем)
-            └── Виктор (свои E2EE ключи, зашифрованы его паролем)
+└── One service account (messenger-sa)
+    └── One API key (AQVN3...)  ← shared by all, for transport only
+        └── One YDS stream (folder_id/messenger)
+            ├── Alice  (her own E2EE keys, encrypted with her password)
+            ├── Bob    (his own E2EE keys, encrypted with his password)
+            └── Victor (his own E2EE keys, encrypted with his password)
 ```
 
-**Важно**: API-ключ нужен всем для доступа к транспорту (YDS).
-Содержимое сообщений зашифровано E2EE — сервер его не видит.
+**Important**: The API key is needed by everyone for transport access (YDS).
+Message content is E2EE encrypted — the server cannot read it.
 
 ---
 
-## Шаг 1: Регистрация в Yandex Cloud
+## Step 1: Register in Yandex Cloud
 
-1. Откройте https://cloud.yandex.ru → **Войти** (или создайте аккаунт через Яндекс ID)
-2. Добавьте платёжный аккаунт (доступен бесплатный trial)
-3. Откройте https://console.cloud.yandex.ru
-4. Скопируйте **ID каталога** — он виден в URL или в настройках каталога
-   - Выглядит так: `b1g8s9q2kj7h5m3n1p4r`
-
----
-
-## Шаг 2: Создать сервисный аккаунт (в веб-консоли)
-
-1. Левое меню → **IAM** → **Сервисные аккаунты** → **Создать сервисный аккаунт**
-2. Имя: `messenger-sa`
-3. Нажмите **Добавить роль** и добавьте обе роли:
-   - `yds.writer` — для отправки сообщений
-   - `yds.reader` — для получения сообщений
-4. Нажмите **Создать**
+1. Go to https://cloud.yandex.com → **Sign in** (or create an account via Yandex ID)
+2. Add a billing account (a free trial is available)
+3. Open https://console.cloud.yandex.com
+4. Copy your **Folder ID** — visible in the URL or in folder settings
+   - It looks like: `b1g8s9q2kj7h5m3n1p4r`
 
 ---
 
-## Шаг 3: Создать API-ключ (в веб-консоли)
+## Step 2: Create a Service Account (web console)
 
-1. Откройте созданный аккаунт `messenger-sa`
-2. Вкладка **API-ключи** → **Создать API-ключ**
-3. Описание: `messenger-app`
-4. ⚠️ **Скопируйте секретный ключ сразу** — он показывается только один раз!
-   - Выглядит так: `AQVN3xxxxxxxxxxxxxxxxxxx`
-
----
-
-## Шаг 4: Создать поток Yandex Data Streams (в веб-консоли)
-
-1. Левое меню → **Yandex Data Streams** → **Создать поток**
-2. Заполните:
-   - **Имя**: `messenger`
-   - **Количество шардов**: `1`
-   - **Время хранения**: `24 часа`
-3. Нажмите **Создать**
+1. Left menu → **IAM** → **Service Accounts** → **Create service account**
+2. Name: `messenger-sa`
+3. Click **Add role** and add both roles:
+   - `yds.writer` — for sending messages
+   - `yds.reader` — for receiving messages
+4. Click **Create**
 
 ---
 
-## Шаг 5: Настроить приложение
+## Step 3: Create an API Key (web console)
 
-### 5.1 Собрать бинарник
+1. Open the created account `messenger-sa`
+2. **API keys** tab → **Create API key**
+3. Description: `messenger-app`
+4. ⚠️ **Copy the secret key immediately** — it is shown only once!
+   - It looks like: `AQVN3xxxxxxxxxxxxxxxxxxx`
+
+---
+
+## Step 4: Create a Yandex Data Stream (web console)
+
+1. Left menu → **Yandex Data Streams** → **Create stream**
+2. Fill in:
+   - **Name**: `messenger`
+   - **Shard count**: `1`
+   - **Retention period**: `24 hours`
+3. Click **Create**
+
+---
+
+## Step 5: Configure the Application
+
+### 5.1 Build the Binary
 
 ```bash
 go build -o nit.exe ./cmd/messenger
 ```
 
-### 5.2 Отредактировать `config/default.yaml`
+### 5.2 Edit `config/default.yaml`
 
 ```yaml
 yds:
   endpoint: "yds.serverless.yandexcloud.net"
-  folder_id: "b1g8s9q2kj7h5m3n1p4r"  # ← ваш ID каталога из консоли
-  stream_name: "messenger"             # ← имя потока (создали в шаге 4)
+  folder_id: "b1g8s9q2kj7h5m3n1p4r"  # ← your folder ID from the console
+  stream_name: "messenger"             # ← stream name (created in step 4)
   region: "ru-central1"
 ```
 
-> Приложение автоматически составит полный путь `folder_id/stream_name` для YDS API.
+> The app automatically constructs the full path `folder_id/stream_name` for the YDS API.
 
-### 5.3 Сохранить API-ключ в системное хранилище
+### 5.3 Save the API Key to the System Keychain
 
-Это безопаснее переменных окружения — ключ хранится зашифрованным в ОС:
+This is more secure than environment variables — the key is stored encrypted by the OS:
 
 ```bash
-# Сохранить ключ (один раз)
+# Save the key (once)
 .\nit.exe secret set-api-key AQVN3xxxxxxxx
 # ✅ API key stored securely in OS keychain.
 
-# Проверить
+# Verify
 .\nit.exe secret get-api-key
 # ✅ API key found in keychain: AQVN...****
 ```
 
-| ОС | Где хранится |
-|----|-------------|
+| OS | Where It's Stored |
+|----|-------------------|
 | Windows | Credential Manager |
 | macOS | Keychain |
 | Linux | GNOME Keyring / KWallet |
 
-> После сохранения переменная `YDS_API_KEY` больше не нужна.
+> After saving, the `YDS_API_KEY` environment variable is no longer needed.
 
 ---
 
-## Шаг 6: Первый запуск — каждый пользователь у себя
+## Step 6: First Run — Each User on Their Machine
 
-Каждый участник чата выполняет эти шаги **на своём компьютере**:
+Each chat participant performs these steps **on their own computer**:
 
 ```bash
-# 1. Сохранить API-ключ (получить у администратора)
+# 1. Save the API key (get it from the administrator)
 .\nit.exe secret set-api-key AQVN3xxxxxxxx
 
-# 2. Создать свои ключи шифрования
+# 2. Generate your encryption keys
 .\nit.exe keygen alice
-# Введите пароль (запомните его — без него ключи недоступны)
-# Вывод: Identity 'alice' generated successfully.
+# Enter password (remember it — keys are inaccessible without it)
+# Output: Identity 'alice' generated successfully.
 
-# 3. Инициализировать поток (только один человек, один раз)
+# 3. Initialize the stream (only one person, once)
 .\nit.exe init
 ```
 
 ---
 
-## Шаг 7: Начало диалога
+## Step 7: Starting a Conversation
 
-### Алиса отправляет сообщение Бобу
+### Alice Sends a Message to Bob
 
 ```bash
-.\nit.exe send bob "Привет Боб!"
-# Введите пароль от ключа alice
-# Вывод: Message sent successfully!
+.\nit.exe send bob "Hello Bob!"
+# Enter alice's key password
+# Output: Message sent successfully!
 ```
 
-### Боб читает сообщения
+### Bob Reads Messages
 
 ```bash
 .\nit.exe receive --identity bob
-# Введите пароль от ключа bob
-# Вывод: [2026-03-25T17:00:00Z] alice: Привет Боб!
+# Enter bob's key password
+# Output: [2026-03-25T17:00:00Z] alice: Hello Bob!
 ```
 
-### Боб отвечает
+### Bob Replies
 
 ```bash
-.\nit.exe send alice "Привет Алиса!"
+.\nit.exe send alice "Hello Alice!"
 ```
 
-### Алиса читает ответ
+### Alice Reads the Reply
 
 ```bash
 .\nit.exe receive --identity alice
-# Вывод: [2026-03-25T17:01:00Z] bob: Привет Алиса!
+# Output: [2026-03-25T17:01:00Z] bob: Hello Alice!
 ```
 
 ---
 
-## Краткая шпаргалка команд
+## Quick Command Reference
 
-| Команда | Что делает |
-|---------|-----------|
-| `.\nit.exe secret set-api-key AQVN3...` | Сохранить API-ключ в keychain |
-| `.\nit.exe secret get-api-key` | Проверить, что ключ сохранён |
-| `.\nit.exe keygen ИМЯ` | Создать свои ключи шифрования |
-| `.\nit.exe init` | Создать поток в YDS (один раз) |
-| `.\nit.exe send КОМУ "текст"` | Отправить зашифрованное сообщение |
-| `.\nit.exe receive --identity ИМЯ` | Получить входящие сообщения |
-
----
-
-## Что видит сервер, что нет
-
-| Данные | Видимость |
-|--------|-----------|
-| Содержимое сообщений | ❌ Зашифровано E2EE, сервер не видит |
-| Приватные ключи | ❌ Хранятся локально, зашифрованы паролем |
-| Кто кому пишет (метаданные) | ✅ Видно в YDS (ограничение транспорта) |
-| API-ключ | ✅ Общий для всех участников |
+| Command | Description |
+|---------|-------------|
+| `.\nit.exe secret set-api-key AQVN3...` | Save API key to keychain |
+| `.\nit.exe secret get-api-key` | Verify the key is saved |
+| `.\nit.exe keygen NAME` | Generate your encryption keys |
+| `.\nit.exe init` | Create YDS stream (once) |
+| `.\nit.exe send TO "text"` | Send an encrypted message |
+| `.\nit.exe receive --identity NAME` | Receive incoming messages |
 
 ---
 
-## Тест без Yandex Cloud (локально)
+## What the Server Can and Cannot See
+
+| Data | Visibility |
+|------|------------|
+| Message content | ❌ E2EE encrypted, server cannot read |
+| Private keys | ❌ Stored locally, encrypted with password |
+| Who messages whom (metadata) | ✅ Visible in YDS (transport limitation) |
+| API key | ✅ Shared by all participants |
+
+---
+
+## Testing Without Yandex Cloud (Locally)
 
 ```bash
-# Терминал 1: запустить мок-сервер
+# Terminal 1: start the mock server
 go run test/mock_yds/server.go
-# Слушает на :4566
+# Listens on :4566
 
-# В config/default.yaml временно поменять:
+# In config/default.yaml temporarily change:
 # endpoint: "localhost:4566"
 
-# Терминал 2:
+# Terminal 2:
 .\nit.exe keygen alice
 .\nit.exe init
-.\nit.exe send bob "Тест!"
+.\nit.exe send bob "Test!"
 .\nit.exe receive --identity alice
-```

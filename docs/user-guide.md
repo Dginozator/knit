@@ -1,47 +1,47 @@
-# Руководство пользователя: E2EE Мессенджер
+# User Guide: E2EE Messenger
 
-## Что это такое
+## What Is This
 
-Консольный мессенджер с end-to-end шифрованием. Каждое сообщение:
-- Шифруется **публичным ключом получателя** (age X25519) — только он может прочитать
-- Подписывается **приватным ключом отправителя** (ed25519) — подтверждает авторство
-- Передаётся через Yandex Data Streams (YDB Topic API)
+A command-line messenger with end-to-end encryption. Every message:
+- Is encrypted with the **recipient's public key** (age X25519) — only they can read it
+- Is signed with the **sender's private key** (ed25519) — proves authorship
+- Is transmitted via Yandex Data Streams (YDB Topic API)
 
-Даже если кто-то читает поток — он видит только зашифрованные байты.
+Even if someone intercepts the stream — they only see encrypted bytes.
 
 ---
 
-## Требования
+## Requirements
 
 - Go 1.21+ (`go build -o nit.exe ./cmd/messenger`)
-- Доступ к Yandex Data Streams (см. `docs/yandex-cloud-setup.md`)
-- Авторизованный ключ сервисного аккаунта (`sa_key_file` в конфиге)
+- Access to Yandex Data Streams (see `docs/yandex-cloud-setup.md`)
+- Service account authorized key (`sa_key_file` in config)
 
 ---
 
-## Первый запуск
+## First Run
 
-### 1. Создать свою идентичность
+### 1. Create Your Identity
 
 ```
-.\nit.exe keygen ВАШЕ_ИМЯ
+.\nit.exe keygen YOUR_NAME
 Enter password: ••••••••
 Identity 'alice' generated successfully.
 ```
 
-> ⚠️ Запомните пароль — без него ключи недоступны. Восстановить нельзя.
+> ⚠️ Remember your password — without it, your keys are inaccessible. There is no recovery.
 
-Ключи хранятся в: `C:\Users\username\.nit\keys\alice.json`
+Keys are stored at: `C:\Users\username\.nit\keys\alice.json`
 
-### 2. Инициализировать поток (один раз)
+### 2. Initialize the Stream (once)
 
 ```
 .\nit.exe init
 ```
 
-### 3. Показать свой публичный ключ
+### 3. Show Your Public Key
 
-Поделитесь этим ключом с теми, кто хочет писать вам:
+Share this key with anyone who wants to message you:
 
 ```
 .\nit.exe pubkey alice
@@ -50,39 +50,39 @@ Enter password: ••••••••
 === Public key for 'alice' ===
 
 Age encryption key (share this):
-  age1npyhm9snmxrmdzyvzuy5crsn2z35zemlfnlgs8khcus6ywayp4xqn2swwk
+  age1npyhm9snmxrmdzyvzuy5crsn2fplzemlfnlgs8khcus6ywayp4xqn2swwk
 
 To add you as a contact, the other person runs:
-  nit contacts add alice age1npyhm9snmxrmdzyvzuy5crsn2z35zemlfnlgs8khcus6ywayp4xqn2swwk
+  nit contacts add alice age1npyhm9snmxrmdzyvzuy5crsn2fplzemlfnlgs8khcus6ywayp4xqn2swwk
 ```
 
 ---
 
-## Переписка с контактом
+## Chatting with a Contact
 
-### Шаг 1: Обменяться публичными ключами
+### Step 1: Exchange Public Keys
 
-Каждый участник делает:
+Each participant runs:
 ```
-.\nit.exe pubkey alice    ← Alice показывает свой ключ
-.\nit.exe pubkey bob      ← Bob показывает свой ключ
+.\nit.exe pubkey alice    ← Alice shows her key
+.\nit.exe pubkey bob      ← Bob shows his key
 ```
 
-### Шаг 2: Добавить друг друга в контакты
+### Step 2: Add Each Other as Contacts
 
-**Alice добавляет Bob:**
+**Alice adds Bob:**
 ```
-.\nit.exe contacts add bob age1xyz_ключ_боба...
+.\nit.exe contacts add bob age1xyz_bobs_key...
 ✅ Contact 'bob' added successfully.
 ```
 
-**Bob добавляет Alice:**
+**Bob adds Alice:**
 ```
-.\nit.exe contacts add alice age1abc_ключ_алисы...
+.\nit.exe contacts add alice age1abc_alices_key...
 ✅ Contact 'alice' added successfully.
 ```
 
-### Шаг 3: Начать слушать (до отправки!)
+### Step 3: Start Listening (before sending!)
 
 ```
 .\nit.exe receive --identity alice
@@ -90,131 +90,130 @@ Enter password: ••••••••
 Listening for messages as 'alice'...
 ```
 
-> ⚠️ **Важно**: запустите `receive` ДО того как собеседник отправит. YDB Topic доставляет только новые сообщения.
+> ⚠️ **Important**: Start `receive` BEFORE your partner sends a message. YDB Topic only delivers new messages.
 
-### Шаг 4: Отправить сообщение
+### Step 4: Send a Message
 
-В другом терминале:
+In another terminal:
 ```
-.\nit.exe send alice "Привет Alice!" --identity bob
+.\nit.exe send alice "Hello Alice!" --identity bob
 Enter password: ••••••••
 ✅ Message sent to 'alice'
    Encrypted with: alice's age key
 ```
 
-### Шаг 5: Alice получает сообщение
+### Step 5: Alice Receives the Message
 
 ```
-[2026-03-25T21:39:00Z] bob → alice: Привет Alice!
+[2026-03-25T21:39:00Z] bob → alice: Hello Alice!
 ```
 
 ---
 
-## Управление контактами
+## Contact Management
 
-### Список контактов
+### List Contacts
 
 ```
 .\nit.exe contacts list
 
 NAME            AGE PUBLIC KEY
 ──────────────────────────────────────────────────────
-alice           age1npyhm9snmxrmdzyvzuy5crsn2z35ze...
+alice           age1npyhm9snmxrmdzyvzuy5crsn2fplze...
 bob             age1xyz789...
 ```
 
-### Удалить контакт
+### Remove a Contact
 
 ```
 .\nit.exe contacts remove bob
 ```
 
-### Хранение контактов
+### Contact Storage
 
-Публичные ключи хранятся в: `C:\Users\username\.nit\contacts\alice.json`
+Public keys are stored at: `C:\Users\username\.nit\contacts\alice.json`
 
 ---
 
-## Управление ключами
+## Key Management
 
-### Список всех пользователей
+### List All Users
 
 ```
 dir "%USERPROFILE%\.nit\keys"
 ```
 
-### Удалить пользователя
+### Delete a User
 
 ```
 del "%USERPROFILE%\.nit\keys\alice.json"
 ```
 
-### Пересоздать (новые ключи, новый пароль)
+### Regenerate (new keys, new password)
 
 ```
 del "%USERPROFILE%\.nit\keys\alice.json"
 .\nit.exe keygen alice
 ```
 
-> ⚠️ При пересоздании — новые ключи. Контакты нужно обновить новым публичным ключом.
+> ⚠️ Regenerating creates new keys. Contacts must be updated with your new public key.
 
 ---
 
-## Справочник команд
+## Command Reference
 
-| Команда | Описание |
-|---------|---------|
-| `.\nit.exe keygen ИМЯ` | Создать идентичность с ключами |
-| `.\nit.exe pubkey ИМЯ` | Показать публичный ключ для обмена |
-| `.\nit.exe init` | Создать поток YDS (один раз) |
-| `.\nit.exe send КОМУ "ТЕКСТ" --identity КТО` | Отправить E2EE сообщение |
-| `.\nit.exe receive --identity ИМЯ` | Получить входящие сообщения |
-| `.\nit.exe contacts add ИМЯ age1...` | Добавить контакт |
-| `.\nit.exe contacts list` | Список контактов |
-| `.\nit.exe contacts remove ИМЯ` | Удалить контакт |
-| `.\nit.exe secret set-api-key ТОКЕН` | Сохранить IAM-токен |
-| `.\nit.exe --help` | Справка |
+| Command | Description |
+|---------|-------------|
+| `.\nit.exe keygen NAME` | Create an identity with keys |
+| `.\nit.exe pubkey NAME` | Show public key for sharing |
+| `.\nit.exe init` | Create YDS stream (once) |
+| `.\nit.exe send TO "TEXT" --identity WHO` | Send an E2EE message |
+| `.\nit.exe receive --identity NAME` | Receive incoming messages |
+| `.\nit.exe contacts add NAME age1...` | Add a contact |
+| `.\nit.exe contacts list` | List contacts |
+| `.\nit.exe contacts remove NAME` | Remove a contact |
+| `.\nit.exe secret set-api-key TOKEN` | Store an IAM token |
+| `.\nit.exe --help` | Show help |
 
 ---
 
-## Как работает шифрование
+## How Encryption Works
 
 ```
-Alice хочет написать Bob:
-  1. Берёт публичный ключ Bob из contacts (age1xyz...)
-  2. Шифрует сообщение этим ключом (только Bob расшифрует)
-  3. Подписывает своим приватным ключом (Bob проверит авторство)
-  4. Отправляет в YDB поток
+Alice wants to message Bob:
+  1. Takes Bob's public key from contacts (age1xyz...)
+  2. Encrypts the message with that key (only Bob can decrypt)
+  3. Signs it with her private key (Bob will verify authorship)
+  4. Sends it to the YDB stream
 
-Bob получает:
-  1. Видит сообщение адресованное ему (RecipientID = "bob")
-  2. Расшифровывает своим приватным ключом age
-  3. Видит: "[2026-03-25] alice → bob: текст"
+Bob receives:
+  1. Sees a message addressed to him (RecipientID = "bob")
+  2. Decrypts it with his age private key
+  3. Sees: "[2026-03-25] alice → bob: text"
 
-Dgino запускает receive:
-  1. Видит зашифрованные данные
-  2. Пытается расшифровать — не может (не его ключ)
-  3. Сообщение игнорируется — он не видит ничего
+Dgino runs receive:
+  1. Sees encrypted data
+  2. Tries to decrypt — can't (not his key)
+  3. Message is ignored — he sees nothing
 ```
 
 ---
 
-## Частые вопросы
+## FAQ
 
-**Q: Сообщения не приходят**
-A: Запустите `receive --identity ИМЯ` ДО того как собеседник отправит.
+**Q: Messages are not arriving**
+A: Run `receive --identity NAME` BEFORE your partner sends a message.
 
 **Q: `contact not found`**
-A: Добавьте контакт: `nit contacts add bob age1...` (нужен публичный ключ Bob).
+A: Add the contact first: `nit contacts add bob age1...` (you need Bob's public key).
 
 **Q: `invalid password`**
-A: Вводите пароль от пользователя в `--identity` (не от получателя).
+A: Enter the password for the user specified in `--identity` (not the recipient).
 
 **Q: `key not found`**
-A: Используйте `--identity ИМЯ`, не просто `receive ИМЯ`.
+A: Use `--identity NAME`, not just `receive NAME`.
 
-**Q: IAM-токен истёк**
-A: Если настроен `sa_key_file` — автоматически. Если вручную:
+**Q: IAM token expired**
+A: If `sa_key_file` is configured — it refreshes automatically. If doing it manually:
 ```
-.\nit.exe secret set-api-key t1.новый_токен
-```
+.\nit.exe secret set-api-key t1.new_token

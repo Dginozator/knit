@@ -267,37 +267,37 @@ GOOS=windows GOARCH=amd64 go build -o nit.exe ./cmd/messenger
 | github.com/spf13/viper | Configuration |
 | golang.org/x/crypto | Cryptographic primitives |
 
-## Roadmap — Следующие шаги
+## Roadmap
 
-### v0.2: Настоящее E2EE между пользователями
-- [ ] Обмен публичными age-ключами между пользователями (contact book)
-- [ ] Шифрование сообщений на публичный ключ получателя (не только подпись)
-- [ ] Команда `nit contacts add <name> <pubkey>` для добавления контактов
-- [ ] Верификация подписи при получении
+### v0.2: True E2EE Between Users
+- [ ] Exchange public age keys between users (contact book)
+- [ ] Encrypt messages with recipient's public key (not just signatures)
+- [ ] `nit contacts add <name> <pubkey>` command for adding contacts
+- [ ] Signature verification on receive
 
-### v0.3: TUI интерфейс
-- [ ] Добавить [Bubble Tea](https://github.com/charmbracelet/bubbletea) для терминального UI
-- [ ] Чат-интерфейс с историей сообщений
-- [ ] Индикатор новых сообщений
-- [ ] Список контактов в боковой панели
+### v0.3: TUI Interface
+- [ ] Add [Bubble Tea](https://github.com/charmbracelet/bubbletea) for terminal UI
+- [ ] Chat interface with message history
+- [ ] New message indicator
+- [ ] Contact list in sidebar
 
-### v0.4: Мобильный клиент
-- [ ] Go HTTP REST прокси-сервер (между мобильным приложением и YDB)
-- [ ] JWT-аутентификация пользователей на сервере
-- [ ] Android клиент (Kotlin/Flutter)
-- [ ] iOS клиент (Swift/Flutter)
+### v0.4: Mobile Client
+- [ ] Go HTTP REST proxy server (between mobile app and YDB)
+- [ ] JWT user authentication on server
+- [ ] Android client (Kotlin/Flutter)
+- [ ] iOS client (Swift/Flutter)
 
-### v0.5: Групповые чаты и улучшения
-- [ ] Групповые сообщения (множественные получатели)
-- [ ] Подтверждения доставки (ack)
-- [ ] Сквозное удаление сообщений
-- [ ] Самоуничтожающиеся сообщения (TTL)
+### v0.5: Group Chats & Improvements
+- [ ] Group messages (multiple recipients)
+- [ ] Delivery acknowledgments (ack)
+- [ ] End-to-end message deletion
+- [ ] Self-destructing messages (TTL)
 
-### v1.0: Продакшен
-- [ ] Автообновление IAM-токена без перезапуска (живые credentials)
+### v1.0: Production
+- [ ] Auto-refresh IAM token without restart (live credentials)
 - [ ] Dockerfile + docker-compose
 - [ ] CI/CD: GitHub Actions (build + test + lint)
-- [ ] Документация по развёртыванию
+- [ ] Deployment documentation
 
 ## License
 
